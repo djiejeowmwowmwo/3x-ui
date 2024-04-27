@@ -60,7 +60,8 @@
         "enabled": true,
         "xudpConcurrency": 8,
         "xudpProxyUDP443": "reject"
-      },
+      }
+    },
     {
       "protocol": "vless",
       "settings": {
