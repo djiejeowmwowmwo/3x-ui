@@ -1,14 +1,26 @@
 {
-  "remarks": "",
+  "remarks": "|Syd| - Test",
   "dns": {
-    "tag": "dns_out",
-    "queryStrategy": "UseIP",
+    "hosts": {
+      "geosite:category-ads-all": "127.0.0.1",
+      "geosite:category-ads-ir": "127.0.0.1"
+    },
     "servers": [
+      "https://94.140.14.14/dns-query",
       {
-        "address": "8.8.8.8",
-        "skipFallback": false
+        "address": "1.1.1.1",
+        "domains": [
+          "geosite:category-ir",
+          "domain:.ir"
+        ],
+        "expectIPs": [
+          "geoip:ir"
+        ],
+        "port": 53
       }
-    ]
+    ],
+    "queryStrategy": "UseIP",
+    "tag": "dns"
   },
   "inbounds": [
     {
@@ -43,20 +55,89 @@
   },
   "outbounds": [
     {
-      "tag": "direct",
+      "mux": {
+        "concurrency": 8,
+        "enabled": true,
+        "xudpConcurrency": 8,
+        "xudpProxyUDP443": "reject"
+      },
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "188.114.99.0",
+            "port": 443,
+            "users": [
+              {
+                "encryption": "none",
+                "flow": "",
+                "id": "0c7c46ae-b78c-436e-8ab4-3def57e2a3ef",
+                "level": 8,
+                "security": "auto"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "sockopt": {
+          "dialerProxy": "fragment",
+          "tcpKeepAliveIdle": 100,
+          "tcpNoDelay": true
+        },
+        "tlsSettings": {
+          "allowInsecure": false,
+          "fingerprint": "chrome",
+          "alpn": [
+            "h2",
+            "http/1.1"
+          ],
+          "serverName": "ProJeCTfrEedoM.PagEs.deV"
+        },
+        "wsSettings": {
+          "headers": {
+            "Host": "PRojECtFREEDoM.PAGEs.deV"
+          },
+          "path": "/wGz5hhyGLefuenzG?ed=2560"
+        }
+      },
+      "tag": "proxy"
+    },
+    {
+      "tag": "fragment",
       "protocol": "freedom",
       "settings": {
-        "domainStrategy": "UseIP"
+        "fragment": {
+          "packets": "tlshello",
+          "length": "10-30",
+          "interval": "10-20"
+        }
+      },
+      "streamSettings": {
+        "sockopt": {
+          "tcpKeepAliveIdle": 100,
+          "tcpNoDelay": true
+        }
       }
     },
     {
-      "tag": "block",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIP"
+      },
+      "tag": "direct"
+    },
+    {
       "protocol": "blackhole",
       "settings": {
         "response": {
           "type": "http"
         }
-      }
+      },
+      "tag": "block"
     }
   ],
   "policy": {
@@ -74,12 +155,45 @@
     }
   },
   "routing": {
-    "domainStrategy": "AsIs",
+    "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
-        "type": "field",
-        "network": "tcp,udp",
-        "outboundTag": "proxy"
+        "ip": [
+          "1.1.1.1"
+        ],
+        "outboundTag": "direct",
+        "port": "53",
+        "type": "field"
+      },
+      {
+        "domain": [
+          "geosite:category-ir",
+          "domain:.ir"
+        ],
+        "outboundTag": "direct",
+        "type": "field"
+      },
+      {
+        "ip": [
+          "geoip:private",
+          "geoip:ir",
+          "geoip:cn",
+          "geoip:ru"
+        ],
+        "outboundTag": "direct",
+        "type": "field"
+      },
+      {
+        "domain": [
+          "geosite:category-ads-all",
+          "geosite:category-ads-ir",
+          "geosite:private",
+          "geosite:category-ir",
+          "geosite:cn",
+          "geosite:category-gov-ru"
+        ],
+        "outboundTag": "block",
+        "type": "field"
       }
     ]
   },
